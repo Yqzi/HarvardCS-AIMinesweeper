@@ -190,6 +190,7 @@ class MinesweeperAI():
 
         undetermined_cells = []
         mines_count = 0
+        changed = False
 
         for i in range(cell[0] - 1, cell[0] + 2):
             for j in range(cell[1] - 1, cell[1] + 2):
@@ -197,6 +198,26 @@ class MinesweeperAI():
                     mines_count += 1
                 elif (i, j) not in self.safes and 0 <= i < self.height and 0 <= j < self.width:
                     undetermined_cells.append((i, j))
+        
+        if undetermined_cells:
+            new_sentence = Sentence(undetermined_cells, count - mines_count)
+            self.knowledge.append(new_sentence)
+            changed = True
+        
+        if changed:
+            for sentence in self.knowledge:
+                if sentence.known_safes():
+                    for cell in sentence.cells.copy():
+                        self.mark_safe(cell)
+                if sentence.known_mines():
+                    for cell in sentence.cells.copy():
+                        self.mark_mine(cell)
+
+            for sentence in self.knowledge:
+                if new_sentence.cells.issubset(sentence.cells) and sentence != new_sentence and sentence.count > 0 and new_sentence.count > 0:
+                    sub = sentence.cells.difference(new_sentence.cells)
+                    new = Sentence(sub, sentence.count - new_sentence.count)
+                    self.knowledge.append(new)
 
 
         
