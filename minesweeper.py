@@ -206,10 +206,10 @@ class MinesweeperAI():
         
         if changed:
             for sentence in self.knowledge:
-                if sentence.known_safes():
+                if sentence.known_safes() and sentence.cells not in self.safes:
                     for cell in sentence.known_safes().copy():
                         self.mark_safe(cell)
-                if sentence.known_mines():
+                if sentence.known_mines() and sentence.cells not in self.mines:
                     for cell in sentence.known_mines().copy():
                         self.mark_mine(cell)
 
