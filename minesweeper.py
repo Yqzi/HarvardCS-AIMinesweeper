@@ -190,6 +190,7 @@ class MinesweeperAI():
 
         undetermined_cells = []
         mines_count = 0
+        changed = False
 
         for i in range(cell[0] - 1, cell[0] + 2):
             for j in range(cell[1] - 1, cell[1] + 2):
@@ -201,42 +202,22 @@ class MinesweeperAI():
         if undetermined_cells:
             new_sentence = Sentence(undetermined_cells, count - mines_count)
             self.knowledge.append(new_sentence)
+            changed = True
         
-        changed = True
-        while changed:
-            changed = False
-
-            # Mark any additional cells as safe or as mines
-            safes = set()
-            mines = set()
+        if changed:
             for sentence in self.knowledge:
-                safes |= sentence.known_safes()
-                mines |= sentence.known_mines()
-            for safe in safes:
-                if safe not in self.safes:
-                    self.mark_safe(safe)
-                    changed = True
-            for mine in mines:
-                if mine not in self.mines:
-                    self.mark_mine(mine)
-                    changed = True
+                if sentence.known_safes() and sentence.cells not in self.safes:
+                    for cell in sentence.known_safes().copy():
+                        self.mark_safe(cell)
+                if sentence.known_mines() and sentence.cells not in self.mines:
+                    for cell in sentence.known_mines().copy():
+                        self.mark_mine(cell)
 
-            # Infer new sentences from subset relationships
-            new_sentences = []
-            for s1 in self.knowledge:
-                for s2 in self.knowledge:
-                    if s1 != s2 and s1.cells and s2.cells and s1.cells.issubset(s2.cells):
-                        diff = s2.cells - s1.cells
-                        diff_count = s2.count - s1.count
-                        new_s = Sentence(diff, diff_count)
-                        if new_s not in self.knowledge and new_s not in new_sentences and diff:
-                            new_sentences.append(new_s)
-            if new_sentences:
-                self.knowledge.extend(new_sentences)
-                changed = True
-
-            # Remove empty sentences
-            self.knowledge = [s for s in self.knowledge if s.cells]
+            for sentence in self.knowledge:
+                if new_sentence.cells.issubset(sentence.cells) and sentence != new_sentence and sentence.count > 0 and new_sentence.count > 0:
+                    sub = sentence.cells.difference(new_sentence.cells)
+                    new = Sentence(sub, sentence.count - new_sentence.count)
+                    self.knowledge.append(new)
 
 
         
